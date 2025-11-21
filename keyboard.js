@@ -100,10 +100,19 @@ function transliterate(latin) {
 
 // === 3. Keyboard Layout ===
 const layout = [
-  ['a', 'i', 'u', 'ụ', 'e', 'o', 'ɛ'],
-  ['k', 'g', 'c', 'j', 's', 'ś', 'ṣ', 'h', 'ḥ'],
-  ['t', 'ṭ', 'd', 'ḍ', 'n', 'ṇ', 'ṅ', 'ñ', 'p', 'b'],
-  ['m', 'ṃ', 'y', 'r', 'ṟ', 'ṛ', 'l', 'ḷ', 'v'],
+  // Row 1: Q(ɛ) W(ụ) E R T(ṭ) Y U I O P
+  ['ɛ', 'ụ', 'e', 'r', 't', 'ṭ', 'y', 'u', 'i', 'o', 'p'],
+
+  // Row 2: A S D(ḍ) G H J K L(ḷ)
+  ['a', 's', 'd', 'ḍ', 'g', 'h', 'j', 'k', 'l', 'ḷ'],
+
+  // Row 3: Z(ś) X(ṣ) C V B N(ṇ) M(ṃ)
+  ['','ś', 'ṣ', 'b', 'n', 'ṇ', 'm', 'ṃ'],
+
+  // Row 4: Remaining Nasals, Liquids, and Misc (Centered)
+  ['', 'c', 'v', 'ṅ', 'ñ', 'ḥ', 'ṟ', 'ṛ'],
+
+  // Row 5: Functional Keys
   ['space', '⌫', '⏎']
 ];
 

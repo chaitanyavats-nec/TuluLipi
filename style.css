@@ -1,6 +1,7 @@
 @font-face {
     font-family: "Tigalari";
     src: url("./fonts/TuluLipi.woff") format("woff");
+    src: url("./fonts/TuluLipi.woff2") format("woff2");
     font-display: swap;
 }
 
@@ -51,7 +52,7 @@ body {
 }
 
 .suggestion:first-child {
-  color: #4c9eff;
+  color: #6c9cd6;
   font-weight: 600;
 }
 
@@ -60,7 +61,7 @@ body {
 #keyboard {
     background-color: none;
     padding: 5px;
-    touch-action: none; /* ⚠️ CRITICAL: Prevents scrolling while swiping */
+    touch-action: none;
     user-select: none;
 }
 
