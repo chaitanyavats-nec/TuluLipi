@@ -19,7 +19,22 @@
 
         <div id="keyboard" class="keyboard"></div>
     </div>
-
+    <div id="welcome-modal" class="welcome-overlay hidden">
+    <div class="welcome-box">
+        <h2>Tulu-Tigalari Keyboard</h2>
+        <p>This keyboard lets you type Tulu using a simple Latin-phonetic system.</p>
+        <ul>
+            <li>Type using Latin letters → Tulu script appears automatically</li>
+            <li>Swipe across keys to form combined sounds</li>
+            <li>Tap suggestions to auto-complete words</li>
+        </ul>
+        <button id="welcome-start">Start Typing</button>
+    </div>
+    </div>
     <script type="module" src="keyboard.js"></script>
+    <script type="module">
+        import { initWelcomeModal } from "./welcome.js";
+        initWelcomeModal();
+    </script>
 </body>
 </html>
