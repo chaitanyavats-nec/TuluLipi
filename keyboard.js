@@ -9,29 +9,28 @@ let currentLayout = 'A';
 // === 3. Keyboard Layout ===
 const layoutA = [
   // Row 1: Q(ɛ) W(ụ) E R T(ṭ) Y U I O P
-  ['ɛ', 'ụ', 'e', 'r', 't', 'ṭ', 'y', 'u', 'i', 'o', 'p'],
+  ['q', 'u', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
 
   // Row 2: A S D(ḍ) G H J K L(ḷ)
-  ['a', 's', 'd', 'ḍ', 'g', 'h', 'j', 'k', 'l', 'ḷ'],
-
-  // Row 3: Z(ś) X(ṣ) C V B N(ṇ) M(ṃ)
-  ['ś', 'ṣ', 'b', 'n', 'ṇ', 'm', 'ṃ'],
+  ['⇧', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', '⌫',],
 
   // Row 4: Remaining Nasals, Liquids, and Misc (Centered)
-  ['c', 'v', 'ṅ', 'ñ', 'ḥ', 'ṟ', 'ṛ'],
+  ['caps','z', ,'x', 'c', 'v', 'b', 'n', 'm', , '⏎'],
 
-  // Row 5: Functional Keys
-  ['⇧', 'space', '⌫', '⏎']
+  ['space']
 ];
 
 const layoutB = [
-  ['ā', 'ī', 'ū', 'ē', 'ō', 'ê', 'ã', 'ī̃', 'æ', 'ɨ', 'ə'],
-  ['á', 'à', 'â', 'ḍh', 'gh', 'jh', 'kh', 'ḷh'],
-  ['śh', 'ṣh', 'bh', 'ñg', 'nh', 'mh'],
-  ['ṁ', 'ḥ', 'ỹ', 'ṝ'],
+  // Row 1: Q(ɛ) W(ụ) E R T(ṭ) Y U I O P
+  ['q', 'ụ', 'ɛ', 'ṛ', 'ṭ', 'y', 'ụ', 'i', 'o', 'p'],
 
-  // Same functional row
-  ['⇧', 'space', '⌫', '⏎']
+  // Row 2: A S D(ḍ) G H J K L(ḷ)
+  ['⇧', 'ś', 'ṣ', 'ḍ', 'f', 'h', 'ḥ', 'j', 'k', 'ḷ', '⌫'],
+
+  // Row 3: Z(ś) X(ṣ) C V B N(ṇ) M(ṃ)
+  ['caps', 'z', 'x', 'ṅ', 'ñ', 'ṇ', 'm', 'ṃ', '⏎'],
+  
+  ['space']
 ];
 
 let typedText = '';
