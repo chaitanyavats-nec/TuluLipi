@@ -205,6 +205,7 @@ body {
   justify-content: center;
   gap: 24px;
   color: #919191;
+  padding: 6px 14px;
 }
 
 #live-wpm, #live-time {
@@ -212,4 +213,191 @@ body {
   background: #222;
   border-radius: 8px;
   font-weight: 500;
+}
+
+.milestone-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 16px;
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 1001;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.milestone-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.completion-modal {
+  position: fixed;           /* Fixed to viewport, not page */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);  /* Semi-transparent black backdrop */
+  
+  /* Flexbox centering - easiest and most reliable */
+  display: flex;
+  justify-content: center;   /* Center horizontally */
+  align-items: center;       /* Center vertically */
+  
+  z-index: 1000;             /* Appear above everything */
+  opacity: 0;                /* Start hidden */
+  transition: opacity 0.3s ease;
+}
+
+.completion-modal.show {
+  opacity: 1;                /* Fade in when shown */
+}
+
+/* The content box inside the modal */
+.completion-content {
+  background: #222;
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;        /* Center text inside */
+  transform: scale(0.9);     /* Start slightly smaller */
+  transition: transform 0.3s ease;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  
+  /* Additional centering for child elements */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.completion-modal.show .completion-content {
+  transform: scale(1);       /* Scale to full size when shown */
+}
+
+.completion-content h2 {
+  font-size: 32px;
+  margin-bottom: 30px;
+  color: #f0f0f0;
+  text-align: center;         /* Center the heading */
+}
+
+.completion-stats {
+  display: flex;
+  justify-content: center;    /* Center the stats horizontally */
+  align-items: center;        /* Align items vertically */
+  margin: 30px 0;
+  gap: 20px;
+  flex-wrap: wrap;            /* Wrap on small screens */
+  width: 100%;
+}
+
+.stat-item {
+  flex: 1;
+  min-width: 100px;
+  text-align: center;         /* Center text in each stat */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #f0f0f0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #f0f0f0;
+  text-align: center;
+}
+
+.completion-buttons {
+  display: flex;
+  justify-content: center;    /* Center buttons */
+  align-items: center;
+  gap: 15px;
+  margin-top: 30px;
+  width: 100%;
+}
+
+.btn-primary,
+.btn-secondary {
+  flex: 1;
+  max-width: 200px;           /* Limit button width */
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.btn-primary {
+  background: #333;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #444;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #222;
+  color: #f0f0f0;
+}
+
+.btn-secondary:hover {
+  background: #333;
+  transform: translateY(-1px);
+}
+
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 600px) {
+  .completion-content {
+    padding: 30px 20px;
+    width: 95%;
+  }
+  
+  .completion-content h2 {
+    font-size: 24px;
+  }
+  
+  .completion-stats {
+    flex-direction: column;    /* Stack vertically on mobile */
+    gap: 15px;
+  }
+  
+  .stat-value {
+    font-size: 24px;
+  }
+  
+  .completion-buttons {
+    flex-direction: column;    /* Stack buttons on mobile */
+    width: 100%;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    max-width: 100%;
+    width: 100%;
+  }
 }

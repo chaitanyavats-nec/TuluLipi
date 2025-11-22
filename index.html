@@ -7,38 +7,54 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <div class="app-container">
         <div class="display-container">
+            <!-- Enhanced Typing Test Container -->
             <div id="typing-test-container">
-                <div id="target-text"></div>
-                <div id="live-stats">
-                    <span id="live-wpm">WPM: 0</span>
-                    <span id="live-time">Time: 0.0s</span>
+                <div id="target-text" class="target-display">vennakam</div>
+                
+                <!-- Progress Bar -->
+                <div id="progress-container" class="progress-container">
+                    <div class="progress-bar-wrapper">
+                        <div id="progress-bar" class="progress-bar"></div>
+                    </div>
+                    <div id="progress-text" class="progress-text">0 / 9</div>
+                </div>
+                
+                <!-- Live Stats -->
+                <div id="live-stats" class="live-stats">
+                    <span id="live-wpm" class="stat-badge">WPM: 0</span>
+                    <span id="live-time" class="stat-badge">Time: 0.0s</span>
+                    <span id="live-accuracy" class="stat-badge">Accuracy: 100%</span>
                 </div>
             </div>
-
-            <div id="tulu-output" class="tulu-text" placeholder="Tulu output..."></div>
             
+            <!-- Output Displays -->
+            <div id="tulu-output" class="tulu-text" placeholder="Tulu output..."></div>
             <div id="roman-output" class="roman-text" placeholder="Type here..."></div>
         </div>
-
+        
+        <!-- Suggestion Bar -->
         <div id="suggestion-bar" class="suggestion-bar"></div>
-
+        
+        <!-- Keyboard -->
         <div id="keyboard" class="keyboard"></div>
     </div>
+    
+    <!-- Welcome Modal -->
     <div id="welcome-modal" class="welcome-overlay hidden">
-    <div class="welcome-box">
-        <h2>Tulu-Tigalari Keyboard</h2>
-        <p>This keyboard lets you type Tulu using a simple Latin-phonetic system.</p>
-        <ul>
-            <li>Type using Latin letters → Tulu script appears automatically</li>
-            <li>Swipe across keys to form combined sounds</li>
-            <li>Tap suggestions to auto-complete words</li>
-        </ul>
-        <button id="welcome-start">Start Typing</button>
+        <div class="welcome-box">
+            <h2>Tulu-Tigalari Keyboard</h2>
+            <p>This keyboard lets you type Tulu using a simple Latin-phonetic system.</p>
+            <ul>
+                <li>Type using Latin letters → Tulu script appears automatically</li>
+                <li>Swipe across keys to form combined sounds</li>
+                <li>Tap suggestions to auto-complete words</li>
+            </ul>
+            <button id="welcome-start">Start Typing</button>
+        </div>
     </div>
-    </div>
+    
     <script type="module" src="keyboard.js"></script>
     <script type="module">
         import { initWelcomeModal } from "./welcome.js";
