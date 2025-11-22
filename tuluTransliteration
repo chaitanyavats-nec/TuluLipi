@@ -1,0 +1,373 @@
+// tuluTranslit.js
+// Transliteration input logic for a Tulu-Tigalari web keyboard.
+// - Handles independent vowels vs dependent vowel signs
+// - Handles left-side & two-part vowel reordering and virama/repha/conjoiner logic
+// Based on the Unicode proposal & code chart (see included citations).
+// References: Unicode Submission (code chart + behaviour), esp. vowel sign positions & virama rules. :contentReference[oaicite:3]{index=3} :contentReference[oaicite:4]{index=4} :contentReference[oaicite:5]{index=5}
+
+/*
+  Basic approach:
+  - Maintain an output buffer (array of Unicode codepoint strings).
+  - Maintain a small 'clusterBuffer' which keeps the current consonant/conjunct cluster
+    to which vowel signs should attach.
+  - On consonant input: push consonant into clusterBuffer (or commit previous cluster).
+  - On vowel input:
+      * If at word-start or after whitespace/punc => emit independent vowel character.
+      * If after consonant cluster => emit dependent vowel sign (vowelSign codepoint),
+        and handle reordering for left-side or two-part vowels by inserting the sign
+        before the cluster in the output sequence (but keeping the logical sequence
+        compatible with Unicode shaping rules).
+  - On virama/conjoiner/repha: follow rules in proposal (Virama U+113CE, Repha U+113D1).
+  - The module uses Unicode codepoints from the proposal's code chart. :contentReference[oaicite:6]{index=6}
+*/
+
+const Tulu = (() => {
+  // --- Unicode code points (from the proposal's code chart) ---
+  // Independent vowels (U+11380..)
+  const CP = {
+    // independent vowels (letters)
+    A: "\u{11380}",      // TULU-TIGALARI LETTER A
+    AA: "\u{11381}",     // AA
+    I: "\u{11382}",
+    II: "\u{11383}",     // canonical decomposition: II ≡ I + AU-v.s (see proposal). :contentReference[oaicite:7]{index=7}
+    U: "\u{11384}",
+    UU: "\u{11385}",
+    VOC_R: "\u{11386}",  // vocalic r
+    VOC_RR: "\u{11387}",
+    VOC_L: "\u{11388}",
+    VOC_LL: "\u{11389}",
+    EE: "\u{1138B}",
+    AI: "\u{1138E}",     // independent AI (has decomposition) :contentReference[oaicite:8]{index=8}
+    OO: "\u{11390}",
+    AU: "\u{11391}",
+
+    // consonants (start at U+11392) - for checking consonant-ness
+    KA: "\u{11392}",
+    // (note: full table not enumerated here — we use block-range checks for consonants)
+
+    // vowel signs (dependent)
+    VS_AA: "\u{113B8}",   // ◌ാ (AA sign)
+    VS_I: "\u{113B9}",    // ◌ി
+    VS_II: "\u{113BA}",   // ◌ീ
+    VS_U: "\u{113BB}",    // ◌ു
+    VS_UU: "\u{113BC}",   // ◌ੂ
+    VS_VOC_R: "\u{113BD}",
+    VS_VOC_RR: "\u{113BE}",
+    VS_VOC_L: "\u{113BF}",
+    VS_VOC_LL: "\u{113C0}",
+
+    // left-side vowel signs and two-part vowels (need reordering)
+    VS_EE: "\u{113C2}",   // left-side EE sign (reorders)
+    VS_AI: "\u{113C5}",   // AI vowel sign (left) (decomposition uses EE-v.s x2). :contentReference[oaicite:9]{index=9}
+    VS_OO: "\u{113C7}",   // two-part OO (appears before and after)
+    VS_AU: "\u{113C8}",   // two-part AU
+    AU_LENGTH_MARK: "\u{113C9}", // used in decompositions
+
+    // special signs
+    VIRAMA: "\u{113CE}",  // TULU-TIGALARI SIGN VIRAMA (explicit independent virama recommended). :contentReference[oaicite:10]{index=10}
+    REPHA: "\u{113D1}",   // REPHA (independent repha mark). :contentReference[oaicite:11]{index=11}
+
+    // Conjoiner / Looped Virama: the proposal recommends such characters to form ligatures.
+    // The proposal describes the Conjoiner glyph and Looped Virama behaviour (see PDF). We'll
+    // keep placeholders here and use the VIRAMA for typical suppression behaviour.
+    // Conjoiner glyph (proposal uses a special glyph; in your implementation you may map to
+    // a chosen codepoint or handle combinatorically at font level). Refer to proposal for font-level handling. :contentReference[oaicite:12]{index=12}
+    CONJOINER: "\u{113CF}", // placeholder (proposal: include conjoiner char to call ligatures) :contentReference[oaicite:13]{index=13}
+    LOOPEd_VIRAMA: "\u{113D0}" // placeholder for looped virama (if you add font support)
+  };
+
+  // Utility: check if a codepoint lies in Tulu-Tigalari consonant block (U+11392..U+113B5 per chart).
+  function isTuluConsonantChar(ch) {
+    if (!ch) return false;
+    const cp = ch.codePointAt(0);
+    return (cp >= 0x11392 && cp <= 0x113B5);
+  }
+
+  // Utility: check if last cluster in buffer is consonant cluster
+  function lastIsConsonantCluster(clusterBuf) {
+    if (clusterBuf.length === 0) return false;
+    // clusterBuf holds strings of codepoints; check last element head
+    const last = clusterBuf[clusterBuf.length - 1];
+    return isTuluConsonantChar(last[0]);
+  }
+
+  // Transliteration maps (Latin -> Tulu pieces)
+  // NOTE: mapping choices below are example transliteration rules. Adjust to your scheme.
+  const latinToIndependentVowel = {
+    "a": CP.A,
+    "aa": CP.AA,
+    "i": CP.I,
+    "ii": CP.II,
+    "u": CP.U,
+    "uu": CP.UU,
+    "r": CP.VOC_R,
+    "rr": CP.VOC_RR,
+    "l": CP.VOC_L,
+    "ll": CP.VOC_LL,
+    "e": CP.EE,
+    "ee": CP.EE,
+    "ai": CP.AI,
+    "o": CP.OO,
+    "oo": CP.OO,
+    "au": CP.AU
+  };
+
+  const latinToVowelSign = {
+    "a": "", // inherent A — vowel sign not needed; attaching consonant implies A unless virama
+    "aa": CP.VS_AA,
+    "i": CP.VS_I,
+    "ii": CP.VS_II,
+    "u": CP.VS_U,
+    "uu": CP.VS_UU,
+    "r": CP.VS_VOC_R,
+    "rr": CP.VS_VOC_RR,
+    "l": CP.VS_VOC_L,
+    "ll": CP.VS_VOC_LL,
+    "e": CP.VS_EE,   // left-side sign — reorders
+    "ee": CP.VS_EE,
+    "ai": CP.VS_AI,  // left-side
+    "o": CP.VS_OO,   // two-part
+    "oo": CP.VS_OO,
+    "au": CP.VS_AU
+  };
+
+  // left-side signs and two-part that require reordering
+  const LEFT_SIDE_SIGNS = new Set([CP.VS_EE, CP.VS_AI]);
+  const TWO_PART_SIGNS = new Set([CP.VS_OO, CP.VS_AU]);
+
+  // The module state is maintained per instance; create a factory to allow multiple instances.
+  function createInstance() {
+    let out = [];            // committed output fragments (strings of Tulu codepoints)
+    let clusterBuffer = [];  // building current consonant/conjunct cluster (array of strings)
+    let lastLatinBuffer = ""; // buffer for multi-letter Latin sequences (for 'ai','au','oo','uu' etc)
+
+    // Helper: commit current clusterBuffer into out
+    function commitCluster() {
+      if (clusterBuffer.length === 0) return;
+      out.push(clusterBuffer.join(""));
+      clusterBuffer = [];
+    }
+
+    // Helper: commit pending latin buffer (used by bulk transliterate)
+    function resetLatinBuffer() {
+      lastLatinBuffer = "";
+    }
+
+    // Accepts a Latin key (string). Returns current output string.
+    // This is designed to be called for each key press (letters only). For special keys (space, punctuation),
+    // call with that char and it will commit clusters appropriately.
+    function processKey(key) {
+      // normalize key to lower-case for mapping
+      const k = key.toLowerCase();
+
+      // boundary chars: whitespace/punctuation => commit cluster and output char as-is
+      if (/\s|[.,?!;:"'()\[\]{}]/.test(k)) {
+        commitCluster();
+        out.push(k); // push punctuation/space into output stream (UTF-8 mixing is ok)
+        resetLatinBuffer();
+        return getOutput();
+      }
+
+      // append to latin buffer to detect multi-letter vowels (ai, au, oo, uu, ii)
+      lastLatinBuffer += k;
+
+      // try to match the longest vowel/sequences first
+      // pick keys of latinToIndependentVowel sorted by length descending
+      const candidates = Object.keys(latinToIndependentVowel).sort((a,b)=>b.length-a.length);
+      let matchedVowel = null;
+      for (const cand of candidates) {
+        if (lastLatinBuffer.endsWith(cand)) {
+          matchedVowel = cand;
+          break;
+        }
+      }
+
+      // If the pressed key is a consonant romanization (not in vowel lists) we treat differently.
+      // For a quick approach, assume consonant romanizations are single letters not in vowel map (e.g. k,g,t,d,p,b,m,n,y,r,l,s,h, etc.)
+      const consonantRoman = /^[kgtdpbmnrylsvhcjzxqf]$/.test(k) && !(k in latinToIndependentVowel);
+
+      // if consonant romanization -> map to Tulu consonant (simple mapping example)
+      if (consonantRoman) {
+        // naive mapping: map common Latin consonants to Tulu consonant codepoints
+        // NOTE: for a production keyboard you need a full mapping table (e.g. 'k' -> KA U+11392, 'g' -> GA)
+        const cMap = {
+          k: "\u{11392}", // KA
+          g: "\u{11394}", // GA (example; ensure correct mapping per your transliteration scheme)
+          n: "\u{113A5}", // NA (example)
+          t: "\u{113A1}", // TA (example)
+          d: "\u{113A3}", // DA
+          p: "\u{113A6}", // PA
+          b: "\u{113A8}", // BA
+          m: "\u{113AA}", // MA
+          y: "\u{113AB}", // YA
+          r: "\u{113AC}", // RA
+          l: "\u{113AD}", // LA
+          s: "\u{113B1}", // SA
+          h: "\u{113B2}", // HA
+          c: "\u{11397}", // CA
+          j: "\u{11399}", // JA
+          z: "\u{113B0}", // SSA (approx)
+          v: "\u{113AE}", // VA
+        };
+        const tuluC = cMap[k] || "\u{11392}"; // default to KA if unmapped
+        // If there is an existing cluster with a trailing virama that indicates explicit suppression,
+        // or if last was consonant, append as conjunct (insert CONJOINER between if desired)
+        if (clusterBuffer.length > 0) {
+          // create conjunct via CONJOINER (proposal recommends a conjoiner char). :contentReference[oaicite:14]{index=14}
+          clusterBuffer.push(CP.CONJOINER);
+          clusterBuffer.push(tuluC);
+        } else {
+          clusterBuffer.push(tuluC);
+        }
+        resetLatinBuffer();
+        return getOutput();
+      }
+
+      // If we've matched a vowel transliteration (e.g. 'a','aa','ai','au','i','u', etc.)
+      if (matchedVowel) {
+        // Decide whether to emit independent vowel or dependent vowel sign
+        const atWordStart = out.length === 0 && clusterBuffer.length === 0;
+        const afterWhitespace = out.length > 0 && /^\s/.test(out[out.length-1].slice(-1));
+        const shouldBeIndependent = atWordStart || afterWhitespace;
+
+        // If there's a consonant cluster pending => attach vowel sign (dependent)
+        if (clusterBuffer.length > 0 && latinToVowelSign[matchedVowel] !== undefined) {
+          const vs = latinToVowelSign[matchedVowel];
+          if (vs === "") {
+            // inherent 'a' — do nothing: inherent vowel remains (no sign).
+            // But commit cluster to output (since we got explicit 'a' typed).
+            commitCluster();
+            resetLatinBuffer();
+            return getOutput();
+          }
+
+          // handle left-side vowel signs (they should appear before the base glyph visually)
+          if (LEFT_SIDE_SIGNS.has(vs)) {
+            // Implementation strategy:
+            // - Commit any preceding output
+            // - Prepend the left-side sign into the output before the cluster we've committed.
+            // Since we haven't yet committed clusterBuffer, we can reorder by creating:
+            //   output = ... + [left-sign] + (cluster)
+            // But to retain logical order that shaping engines expect, we typically append
+            // the vowel sign after cluster in Unicode; however the proposal indicates these
+            // are left-positioned and may require reordering at shaping-level. The safe
+            // behaviour here is to insert the sign before the cluster in the visible buffer
+            // (so fonts/shaping get correct metrics). We'll represent that by:
+            const clusterStr = clusterBuffer.join("");
+            // commit as: left-sign + cluster
+            out.push(vs + clusterStr);
+            clusterBuffer = [];
+            resetLatinBuffer();
+            return getOutput();
+          }
+
+          // handle two-part vowels (OO, AU) which are "before-and-after" or two-piece.
+          if (TWO_PART_SIGNS.has(vs)) {
+            // two-part vowel: decomposition often equals EE-sign + A-sign or EE + AU-length mark + A-sign
+            // The proposal gives decompositions such as OO ≡ EE-v.s + AA-v.s at glyph level. :contentReference[oaicite:15]{index=15}
+            // Implementation: Insert the EE (left portion) before cluster, and AA (or AU-length) after cluster.
+            const left = CP.VS_EE; // left part
+            const right = (vs === CP.VS_OO) ? CP.VS_AA : CP.AU_LENGTH_MARK + CP.VS_AA; // simplification
+            const clusterStr = clusterBuffer.join("");
+            out.push(left + clusterStr + right);
+            clusterBuffer = [];
+            resetLatinBuffer();
+            return getOutput();
+          }
+
+          // normal post-base vowel sign: append to cluster then commit
+          clusterBuffer.push(vs);
+          commitCluster();
+          resetLatinBuffer();
+          return getOutput();
+        }
+
+        // no pending cluster => emit independent vowel letter
+        if (latinToIndependentVowel[matchedVowel]) {
+          commitCluster();
+          out.push(latinToIndependentVowel[matchedVowel]);
+          resetLatinBuffer();
+          return getOutput();
+        }
+
+        // fallback: treat as plain Latin char(s) if not found
+        commitCluster();
+        out.push(matchedVowel);
+        resetLatinBuffer();
+        return getOutput();
+      }
+
+      // if nothing matched yet, keep buffering latin letters (to pick up later 'ai', 'au', etc.)
+      // But to avoid infinite buffer growth, if lastLatinBuffer length > 3 commit it as-is
+      if (lastLatinBuffer.length > 3) {
+        commitCluster();
+        out.push(lastLatinBuffer);
+        resetLatinBuffer();
+      }
+
+      return getOutput();
+    }
+
+    // Bulk transliterate latin text into Tulu output (best-effort; uses the incremental processKey)
+    function transliterateLatinText(latinText) {
+      // reset state
+      out = [];
+      clusterBuffer = [];
+      resetLatinBuffer();
+      for (let ch of latinText) {
+        processKey(ch);
+      }
+      // commit remaining cluster
+      commitCluster();
+      return getOutput();
+    }
+
+    function getOutput() {
+      // Return the joined output plus any cluster still building (not committed)
+      return out.join("") + (clusterBuffer.length ? clusterBuffer.join("") : "");
+    }
+
+    // Expose functions:
+    return {
+      processKey,           // incremental (call for each key)
+      transliterate: transliterateLatinText, // bulk convert
+      commitCluster,        // allow UI to explicitly commit cluster (on space, enter)
+      getOutput,
+      // debugging: expose internal state
+      _debug: () => ({ out: out.slice(), clusterBuffer: clusterBuffer.slice(), lastLatinBuffer })
+    };
+  }
+
+  return {
+    createInstance,
+    CP // export codepoints constants for other modules
+  };
+})();
+
+// Export for CommonJS / ESM usage
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = Tulu;
+}
+if (typeof window !== "undefined") {
+  window.TuluTranslit = Tulu;
+}
+
+/*
+  Notes, caveats & references:
+  - This module uses the Tulu-Tigalari code points and behaviour documented in the Unicode proposal
+    (independent vowels, dependent vowel signs, left-side reordering and two-part vowel decomposition,
+    virama ordering suggestions and recommended Conjoiner/Looped-Virama behaviour). See the proposal's
+    code chart and behaviour sections for details. :contentReference[oaicite:16]{index=16} :contentReference[oaicite:17]{index=17} :contentReference[oaicite:18]{index=18}
+  - The consonant mapping (latin -> specific consonant codepoints) included here is illustrative and incomplete.
+    For a production transliteration keyboard you'll need a complete mapping table (aspirated stops, retroflex series,
+    nasal series, geminates, aspirated forms, etc.) and a robust romanization scheme (IAST-style or a custom scheme).
+  - For correct shaping across browsers/fonts, you should supply a Tulu-Tigalari font that implements the
+    ligature features and glyph forms described in the proposal (many ligatures & looped-virama forms are font-level).
+  - The proposal recommends special handling of Virama ordering for the shaping engine (USE overrides) — if
+    you encounter rendering problems with sequences like (Consonant + VowelSign + VIRAMA) test with
+    font & shaping-engine adjustments. :contentReference[oaicite:19]{index=19}
+  - Conjoiner & Looped Virama are recommended to call ligatures and are discussed at length in the proposal;
+    I left placeholders for these characters (CONJOINER U+113CF and LOOPEd_VIRAMA U+113D0) — check your
+    font and the final code chart if the proposal assigns definitive codepoints. :contentReference[oaicite:20]{index=20}
+*/
+

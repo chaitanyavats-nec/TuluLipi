@@ -11,6 +11,9 @@ const tuluMap = {
   'u':  { i: '\u{11384}', d: '\u{113BB}' },        // LETTER U / VOWEL SIGN U
   'ū':  { i: '\u{11385}', d: '\u{113BC}' },        // LETTER UU / VOWEL SIGN UU
 
+  'ụ': { i: '', d: '\u{113BB}' },
+  'ụụ': { i: '', d: '\u{113CF}' },
+
   'ṛ':  { i: '\u{11386}', d: '\u{113BD}' },        // LETTER VOCALIC R / VOWEL SIGN VOC R
   'ṝ':  { i: '\u{11387}', d: '\u{113BE}' },        // (if present) VOCALIC RR
 
@@ -110,6 +113,8 @@ const tuluMap = {
   'vowel_oo': { sign: '\u{113C7}' },
   'vowel_au': { sign: '\u{113C8}' },
   'au_length':{ sign: '\u{113C9}' }, // AU LENGTH MARK
+  'vowel_ụ': { sign: '\u{113CE}' },
+  'vowel_ụụ': { sign: '\u{113CF}' },  
 
   // === Digits (if you want to expose them) ===
   '0': { num: '\u{113E1}' }, // TULU-TIGALARI DIGIT ZERO (if present)
