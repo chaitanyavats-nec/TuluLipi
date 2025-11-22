@@ -1,58 +1,8 @@
 import { predict } from "./predictiveEngine.js";
 import { transliterate } from "./transliteration.js";
+import { TypingTest } from "./testmode.js";
 let backspaceInterval = null;
 let backspaceTimeout = null;
-
-// === Timer for WPM Testing ===
-let testTarget = "abc"; // Or load dynamically
-let testStarted = false;
-let testFinished = false;
-let startTime = null;
-let endTime = null;
-
-// === Live WPM Display ===
-let liveWPMInterval = null;
-
-function updateLiveWPM() {
-  if (!testStarted || testFinished) return;
-
-  const now = performance.now();
-  const minutes = (now - startTime) / 1000 / 60;
-
-  const wpm = (typedText.length / 5) / minutes;
-
-  document.getElementById("live-wpm").textContent = `WPM: ${wpm.toFixed(1)}`;
-  document.getElementById("live-time").textContent = `Time: ${((now - startTime) / 1000).toFixed(1)}s`;
-}
-
-
-function startTestTimer() {
-  testStarted = true;
-  startTime = performance.now();
-
-  // update immediately
-  updateLiveWPM();
-
-  // keep updating every 100ms
-  liveWPMInterval = setInterval(updateLiveWPM, 100);
-}
-
-
-function endTestTimer() {
-  testFinished = true;
-  endTime = performance.now();
-
-  clearInterval(liveWPMInterval);
-
-  const minutes = (endTime - startTime) / 1000 / 60;
-  const wpm = (typedText.length / 5) / minutes;
-
-  alert(
-    `Test Complete!\n\n` +
-    `Time: ${(minutes * 60).toFixed(1)} sec\n` +
-    `WPM: ${wpm.toFixed(1)}`
-  );
-}
 
 
 // === 3. Keyboard Layout ===
@@ -64,16 +14,17 @@ const layout = [
   ['a', 's', 'd', 'ḍ', 'g', 'h', 'j', 'k', 'l', 'ḷ'],
 
   // Row 3: Z(ś) X(ṣ) C V B N(ṇ) M(ṃ)
-  ['','ś', 'ṣ', 'b', 'n', 'ṇ', 'm', 'ṃ'],
+  ['ś', 'ṣ', 'b', 'n', 'ṇ', 'm', 'ṃ'],
 
   // Row 4: Remaining Nasals, Liquids, and Misc (Centered)
-  ['', 'c', 'v', 'ṅ', 'ñ', 'ḥ', 'ṟ', 'ṛ'],
+  ['c', 'v', 'ṅ', 'ñ', 'ḥ', 'ṟ', 'ṛ'],
 
   // Row 5: Functional Keys
-  ['space', '⌫', '⏎']
+  ['⇧', 'space', '⌫', '⏎']
 ];
 
 let typedText = '';
+const test = new TypingTest("vennakam", () => typedText);
 let suggestions = [];
 let isSwiping = false;
 let swipeKeys = new Set();
@@ -131,8 +82,9 @@ function createKeyboard() {
 
 // === 5. Key Logic + Predictions ===
 function processKey(key) {
-  if (!testStarted && !testFinished && key !== '⌫') {
-    startTestTimer();
+  // Start timer when first non-backspace key is pressed
+  if (!test.testStarted && !test.testFinished && key !== "⌫") {
+    test.startTimer();
   }
   if (key === 'space') typedText += ' ';
   else if (key === '⌫') typedText = typedText.slice(0, -1);
@@ -141,8 +93,10 @@ function processKey(key) {
 
   updateDisplay();
   updateSuggestions();
-  if (!testFinished && typedText === testTarget) {
-    endTestTimer();
+  
+  // Stop timer when finished
+  if (!test.testFinished && typedText === test.testTarget) {
+    test.stopTimer();
   }
 }
 
@@ -248,5 +202,5 @@ document.addEventListener('mouseup', () => {
 });
 
 createKeyboard();
-document.getElementById('target-text').textContent = testTarget;
+document.getElementById("target-text").textContent = test.testTarget;
 
