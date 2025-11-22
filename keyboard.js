@@ -3,6 +3,58 @@ import { transliterate } from "./transliteration.js";
 let backspaceInterval = null;
 let backspaceTimeout = null;
 
+// === Timer for WPM Testing ===
+let testTarget = "abc"; // Or load dynamically
+let testStarted = false;
+let testFinished = false;
+let startTime = null;
+let endTime = null;
+
+// === Live WPM Display ===
+let liveWPMInterval = null;
+
+function updateLiveWPM() {
+  if (!testStarted || testFinished) return;
+
+  const now = performance.now();
+  const minutes = (now - startTime) / 1000 / 60;
+
+  const wpm = (typedText.length / 5) / minutes;
+
+  document.getElementById("live-wpm").textContent = `WPM: ${wpm.toFixed(1)}`;
+  document.getElementById("live-time").textContent = `Time: ${((now - startTime) / 1000).toFixed(1)}s`;
+}
+
+
+function startTestTimer() {
+  testStarted = true;
+  startTime = performance.now();
+
+  // update immediately
+  updateLiveWPM();
+
+  // keep updating every 100ms
+  liveWPMInterval = setInterval(updateLiveWPM, 100);
+}
+
+
+function endTestTimer() {
+  testFinished = true;
+  endTime = performance.now();
+
+  clearInterval(liveWPMInterval);
+
+  const minutes = (endTime - startTime) / 1000 / 60;
+  const wpm = (typedText.length / 5) / minutes;
+
+  alert(
+    `Test Complete!\n\n` +
+    `Time: ${(minutes * 60).toFixed(1)} sec\n` +
+    `WPM: ${wpm.toFixed(1)}`
+  );
+}
+
+
 // === 3. Keyboard Layout ===
 const layout = [
   // Row 1: Q(ɛ) W(ụ) E R T(ṭ) Y U I O P
@@ -79,6 +131,9 @@ function createKeyboard() {
 
 // === 5. Key Logic + Predictions ===
 function processKey(key) {
+  if (!testStarted && !testFinished && key !== '⌫') {
+    startTestTimer();
+  }
   if (key === 'space') typedText += ' ';
   else if (key === '⌫') typedText = typedText.slice(0, -1);
   else if (key === '⏎') typedText += '\n';
@@ -86,6 +141,9 @@ function processKey(key) {
 
   updateDisplay();
   updateSuggestions();
+  if (!testFinished && typedText === testTarget) {
+    endTestTimer();
+  }
 }
 
 function updateDisplay() {
@@ -190,3 +248,5 @@ document.addEventListener('mouseup', () => {
 });
 
 createKeyboard();
+document.getElementById('target-text').textContent = testTarget;
+

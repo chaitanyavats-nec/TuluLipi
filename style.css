@@ -13,7 +13,7 @@
 
 body {
   margin: 0;
-  font-family: 'TuluLipi';
+  font-family: 'Satoshi';
   background: #222;
   color: #fff;
   display: flex;
@@ -179,3 +179,37 @@ body {
     display: none;
 }
 
+/* ===== Test Typing ===== */
+#typing-test-container {
+  width: 100%;
+  text-align: center;
+  padding: 20px 0;
+}
+
+#target-text {
+  font-size: 32px;
+  font-weight: 600;
+  max-width: 80%;
+  margin: 0 auto 15px auto;
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: #222;
+  border: 2px solid #333;
+  color: #919191;
+}
+
+#live-stats {
+  font-size: 20px;
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  color: #919191;
+}
+
+#live-wpm, #live-time {
+  padding: 6px 14px;
+  background: #222;
+  border-radius: 8px;
+  font-weight: 500;
+}
