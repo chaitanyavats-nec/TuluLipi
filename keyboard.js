@@ -9,29 +9,28 @@ let currentLayout = 'A';
 // === 3. Keyboard Layout ===
 const layoutA = [
   // Row 1: Q(ɛ) W(ụ) E R T(ṭ) Y U I O P
-  ['ɛ', 'ụ', 'e', 'r', 't', 'ṭ', 'y', 'u', 'i', 'o', 'p'],
+  ['q', 'u', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
 
   // Row 2: A S D(ḍ) G H J K L(ḷ)
-  ['a', 's', 'd', 'ḍ', 'g', 'h', 'j', 'k', 'l', 'ḷ'],
-
-  // Row 3: Z(ś) X(ṣ) C V B N(ṇ) M(ṃ)
-  ['ś', 'ṣ', 'b', 'n', 'ṇ', 'm', 'ṃ'],
+  ['⇧', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', '⌫',],
 
   // Row 4: Remaining Nasals, Liquids, and Misc (Centered)
-  ['c', 'v', 'ṅ', 'ñ', 'ḥ', 'ṟ', 'ṛ'],
+  ['caps','z', ,'x', 'c', 'v', 'b', 'n', 'm', , '⏎'],
 
-  // Row 5: Functional Keys
-  ['⇧', 'space', '⌫', '⏎']
+  ['space']
 ];
 
 const layoutB = [
-  ['ā', 'ī', 'ū', 'ē', 'ō', 'ê', 'ã', 'ī̃', 'æ', 'ɨ', 'ə'],
-  ['á', 'à', 'â', 'ḍh', 'gh', 'jh', 'kh', 'ḷh'],
-  ['śh', 'ṣh', 'bh', 'ñg', 'nh', 'mh'],
-  ['ṁ', 'ḥ', 'ỹ', 'ṝ'],
+  // Row 1: Q(ɛ) W(ụ) E R T(ṭ) Y U I O P
+  ['q', 'ụ', 'ɛ', 'ṛ', 'ṟ', 'ṭ', 'ụ', 'i', 'o', 'p'],
 
-  // Same functional row
-  ['⇧', 'space', '⌫', '⏎']
+  // Row 2: A S D(ḍ) G H J K L(ḷ)
+  ['⇧', 'ś', 'ṣ', 'ḍ', 'f', 'h', 'ḥ', 'j', 'ḻ', 'ḷ', '⌫'],
+
+  // Row 3: Z(ś) X(ṣ) C V B N(ṇ) M(ṃ)
+  ['caps', 'z', 'x', 'ṅ', 'ñ', 'ṇ', 'm', 'ṃ', '⏎'],
+  
+  ['space']
 ];
 
 let typedText = '';
@@ -116,6 +115,22 @@ function createKeyboard() {
       }
       else keyDiv.textContent = key;
 
+      keyDiv.addEventListener('touchstart', e => {
+        e.preventDefault();
+        
+        // Handle backspace with hold-to-repeat
+        if (key === '⌫') {
+          processKey('⌫');
+          
+          // Start delayed auto-repeat
+          backspaceTimeout = setTimeout(() => {
+            backspaceInterval = setInterval(() => processKey('⌫'), 50);
+          }, 300);
+        } else {
+          handleTouchStart(e, keyDiv, key);
+        }
+      }, { passive: false });
+      
       keyDiv.addEventListener('mousedown', e => {
         e.preventDefault();
         if (key === '⇧') {
@@ -367,24 +382,7 @@ function updateProgressBar(current, total) {
   }
 }
 
-function celebrateMilestone(percentage) {
-  const messages = {
-    25: "Quarter way!",
-    50: "Halfway there!",
-    75: "Almost done!"
-  };
-  
-  const toast = document.createElement('div');
-  toast.className = 'milestone-toast';
-  toast.textContent = messages[percentage];
-  document.body.appendChild(toast);
-  
-  setTimeout(() => toast.classList.add('show'), 10);
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 300);
-  }, 2000);
-}
+
 
 // === 8. Initialize ===
 window.tuluTest = test; // Make test accessible globally for debugging
