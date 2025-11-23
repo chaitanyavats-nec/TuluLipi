@@ -17,6 +17,11 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+/* Prevent zoom on input focus - helps keep keyboard visible */
+input, textarea, select {
+    font-size: 16px !important;
+}
+
 /* ============================================
    BASE LAYOUT
    ============================================ */
@@ -28,8 +33,13 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    height: 100svh; /* Use svh for better mobile support */
     justify-content: flex-end;
     overflow: hidden;
+    position: fixed; /* Prevent body scroll */
+    width: 100%;
+    /* Prevent pull-to-refresh */
+    overscroll-behavior: none;
 }
 
 .app-container { 
@@ -67,7 +77,7 @@ body {
 }
 
 .latin-subtext {
-    font-family: 'Courier New', monospace;
+    font-family: 'Satoshi';
     font-size: 14px;
     color: #888;
     margin-top: 4px;
@@ -112,29 +122,33 @@ body {
    ============================================ */
 #keyboard {
     background-color: transparent;
-    padding: 8px 4px 12px;
+    padding: 12px 8px 16px;
     touch-action: none;
     user-select: none;
     width: 100%;
     max-width: 100%;
+    /* Ensure keyboard stays visible on mobile */
+    position: relative;
+    z-index: 100;
 }
 
 .key-row {
     display: flex;
     justify-content: center;
-    gap: 4px;
-    margin-bottom: 6px;
+    gap: 6px;
+    margin-bottom: 8px;
+    width: 100%;
 }
 
 .key {
     background: #2e2e30;
-    border-radius: 6px;
-    padding: 14px 8px;
-    min-width: 32px;
-    flex: 1;
-    max-width: 48px;
+    border-radius: 8px;
+    padding: 16px 8px;
+    min-width: 0; /* Allow keys to shrink */
+    flex: 1 1 auto; /* Flexible growth and shrink */
+    max-width: 60px;
     text-align: center;
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     font-weight: 500;
     cursor: pointer;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -143,6 +157,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    /* Better touch targets */
+    min-height: 48px;
 }
 
 .key:active,
@@ -154,18 +171,14 @@ body {
 }
 
 .key-space {
-    flex: 3;
-    max-width: 300px;
-    min-width: 180px;
+    flex: 3 1 auto;
+    max-width: 40%;
     font-size: 1rem;
 }
 
-.key-shift,
-.key[data-key="⌫"],
-.key[data-key="⏎"],
-.key[data-key="caps"] {
-    flex: 1.2;
-    max-width: 60px;
+.key-special {
+    flex: 1.5 1 auto;
+    max-width: 70px;
     font-size: 1rem;
     background: #3a3a3c;
 }
@@ -307,7 +320,6 @@ body {
 }
 
 #progress-bar {
-  display: none;
     width: 0;
     height: 4px;
     background: linear-gradient(90deg, #4c9eff, #667eea);
@@ -471,6 +483,76 @@ body {
 }
 
 /* ============================================
+   DIACRITICAL POPUP SYSTEM
+   ============================================ */
+.diacritic-indicator {
+    position: absolute;
+    top: 3px;
+    right: 5px;
+    font-size: 10px;
+    color: #4c9eff;
+    opacity: 0.7;
+    font-weight: bold;
+}
+
+.diacritic-variant.active-variant {
+  background: #333;
+  color: white;
+  transform: scale(1.2);
+}
+
+
+.key {
+    position: relative;
+}
+
+.diacritic-popup {
+    position: fixed;
+    display: flex;
+    gap: 4px;
+    padding: 8px;
+    background: #1a1a1a;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    z-index: 10000;
+    transform: translateX(-50%) translateY(10px);
+    opacity: 0;
+    transition: all 0.2s ease;
+    border: 2px solid #4c9eff;
+}
+
+.diacritic-popup.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.diacritic-variant {
+    min-width: 44px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #2e2e30;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0 8px;
+}
+
+.diacritic-variant:hover,
+.diacritic-variant:active {
+    background: #4c9eff;
+    transform: scale(1.1);
+}
+
+.diacritic-variant.base-variant {
+    border: 2px solid #4c9eff;
+}
+
+/* ============================================
    UTILITY CLASSES
    ============================================ */
 .hidden {
@@ -481,8 +563,21 @@ body {
    RESPONSIVE DESIGN
    ============================================ */
 @media (max-width: 768px) {
+    body {
+        /* Use small viewport height to avoid browser chrome */
+        height: 100svh;
+    }
+    
+    #keyboard {
+        padding: 10px 6px 14px;
+    }
+    
+    .key-row {
+        gap: 5px;
+    }
+    
     #target-text {
-        font-size: 24px;
+        font-size: 22px;
         padding: 12px 16px;
         max-width: 95%;
     }
@@ -499,25 +594,46 @@ body {
         font-size: 14px;
         min-width: 70px;
     }
-}
-
-@media (max-width: 600px) {
+    
+    /* Optimized keys for tablets and large phones */
     .key {
-        padding: 12px 6px;
-        font-size: 1.2rem;
-        max-width: 42px;
-        min-width: 28px;
+        padding: 16px 6px;
+        font-size: 1.4rem;
+        min-height: 50px;
     }
     
     .key-space {
-        min-width: 140px;
+        font-size: 0.95rem;
     }
     
-    .key-shift,
-    .key[data-key="⌫"],
-    .key[data-key="⏎"],
-    .key[data-key="caps"] {
-        max-width: 50px;
+    .key-special {
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 600px) {
+    #keyboard {
+        padding: 8px 4px 12px;
+    }
+    
+    .key-row {
+        gap: 4px;
+        margin-bottom: 6px;
+    }
+    
+    /* Compact but still tappable for small phones */
+    .key {
+        padding: 26px 4px;
+        font-size: 1.3rem;
+        min-height: 48px;
+        border-radius: 6px;
+    }
+    
+    .key-space {
+        font-size: 0.9rem;
+    }
+    
+    .key-special {
         font-size: 0.9rem;
     }
     
@@ -561,32 +677,73 @@ body {
         font-size: 1rem;
         padding: 6px;
     }
+    
+    .diacritic-variant {
+        min-width: 48px;
+        height: 52px;
+        font-size: 1.5rem;
+    }
 }
 
 @media (max-width: 400px) {
-    .key {
-        padding: 10px 4px;
-        font-size: 1.1rem;
-        max-width: 36px;
-        min-width: 24px;
-    }
-    
-    .key-space {
-        min-width: 120px;
-        font-size: 0.9rem;
+    #keyboard {
+        padding: 6px 3px 10px;
     }
     
     .key-row {
         gap: 3px;
-        margin-bottom: 4px;
+        margin-bottom: 5px;
     }
     
-    #keyboard {
-        padding: 6px 2px 10px;
+    .key {
+        padding: 20px 3px;
+        font-size: 1.2rem;
+        min-height: 44px;
+        border-radius: 5px;
+    }
+    
+    .key-space {
+        font-size: 0.85rem;
+    }
+    
+    .key-special {
+        font-size: 0.85rem;
     }
     
     #target-text {
         font-size: 18px;
+    }
+    
+    .diacritic-variant {
+        min-width: 42px;
+        height: 48px;
+        font-size: 1.4rem;
+    }
+}
+
+@media (max-width: 360px) {
+    #keyboard {
+        padding: 5px 2px 8px;
+    }
+    
+    .key-row {
+        gap: 2px;
+        margin-bottom: 4px;
+    }
+    
+    .key {
+        padding: 16px 2px;
+        font-size: 1.1rem;
+        min-height: 42px;
+        border-radius: 4px;
+    }
+    
+    .key-space {
+        font-size: 0.8rem;
+    }
+    
+    .key-special {
+        font-size: 0.8rem;
     }
 }
 
@@ -597,27 +754,48 @@ body {
     body {
         height: auto;
         min-height: 100vh;
+        min-height: 100svh;
     }
     
     #typing-test-container {
-        padding: 12px;
+        padding: 8px;
     }
     
     #target-text {
-        font-size: 20px;
-        padding: 10px 16px;
-        margin-bottom: 12px;
+        font-size: 18px;
+        padding: 8px 12px;
+        margin-bottom: 10px;
     }
     
     .key {
-        padding: 10px 6px;
+        padding: 10px 4px;
+        min-height: 40px;
+        font-size: 1.2rem;
     }
     
     #keyboard {
-        padding: 6px 4px 8px;
+        padding: 5px 4px 8px;
     }
     
     .key-row {
         margin-bottom: 4px;
+        gap: 3px;
+    }
+}
+
+/* ============================================
+   iOS SPECIFIC FIXES
+   ============================================ */
+@supports (-webkit-touch-callout: none) {
+    body {
+        /* iOS Safari specific height */
+        min-height: -webkit-fill-available;
+    }
+    
+    /* Prevent iOS bounce/rubber-banding */
+    html {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
     }
 }
