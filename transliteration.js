@@ -3,27 +3,29 @@ const tuluMap = {
   // Basic vowels
   'a':  { i: '\u{11380}', d: '' },                 // LETTER A
   'aa': { i: '\u{11381}', d: '\u{113B8}' },        // LETTER AA / VOWEL SIGN AA
-  'ā':  { i: '\u{11381}', d: '\u{113B8}' },        // macron alias
 
   'i':  { i: '\u{11382}', d: '\u{113B9}' },        // LETTER I / VOWEL SIGN I
-  'ī':  { i: '\u{11383}', d: '\u{113BA}' },        // LETTER II / VOWEL SIGN II
+  'ii':  { i: '\u{11383}', d: '\u{113BA}' },        // LETTER II / VOWEL SIGN II
 
   'u':  { i: '\u{11384}', d: '\u{113BB}' },        // LETTER U / VOWEL SIGN U
-  'ū':  { i: '\u{11385}', d: '\u{113BC}' },        // LETTER UU / VOWEL SIGN UU
+  'uu':  { i: '\u{11385}', d: '\u{113BC}' },        // LETTER UU / VOWEL SIGN UU
 
   'ụ': { i: '', d: '\u{113BB}' },
   'ụụ': { i: '', d: '\u{113CF}' },
 
   'ṛ':  { i: '\u{11386}', d: '\u{113BD}' },        // LETTER VOCALIC R / VOWEL SIGN VOC R
-  'ṝ':  { i: '\u{11387}', d: '\u{113BE}' },        // (if present) VOCALIC RR
+  'ṛṛ':  { i: '\u{11387}', d: '\u{113BE}' },        // (if present) VOCALIC RR
 
-  'ḷ':  { i: '\u{1138A}' /* fallback if present */, d: '\u{113BF}' }, // vocalic l variants (chart uses 113BF/113C0)
+  'ḷ':  { i: '\u{11388}' /* fallback if present */, d: '\u{113BF}' }, // vocalic l variants (chart uses 113BF/113C0)
+  'ḷḷ': { i: '\u{11389}', d: '\u{113B5}' },
   // Note: 'ḷ' and long ḹ variants mapping may vary by font; keep these as examples.
 
-  // Additional vowels/diphthongs
-  'e':  { i: '\u{1138B}', d: '\u{113C2}' },        // LETTER E / VOWEL SIGN EE
+// Long vowels (NOTE: E and O are NOT in traditional Tulu-Tigalari per proposal)
+  'ee': { i: '\u{1138B}', d: '\u{113C2}' },        // LETTER EE / VOWEL SIGN EE
+  'ē':  { i: '\u{1138B}', d: '\u{113C2}' },        // diacritic alias
   'ai': { i: '\u{1138E}', d: '\u{113C5}' },        // LETTER AI / VOWEL SIGN AI
-  'o':  { i: '\u{11390}', d: '\u{113C7}' },        // LETTER OO / VOWEL SIGN OO
+  'oo': { i: '\u{11390}', d: '\u{113C7}' },        // LETTER OO / VOWEL SIGN OO
+  'ō':  { i: '\u{11390}', d: '\u{113C7}' },        // diacritic alias
   'au': { i: '\u{11391}', d: '\u{113C8}' },        // LETTER AU / VOWEL SIGN AU
 
   // common orthographic signs
@@ -125,78 +127,160 @@ const tuluMap = {
 // Helper: order of matching for longest-key-first
 const mapKeysSorted = Object.keys(tuluMap).sort((a, b) => b.length - a.length);
 
-// === Unicode-safe consonant detection ===
-function isTuluConsonant(str) {
-  if (!str) return false;
-  // get last full Unicode character (handles surrogate pairs)
-  const last = [...str].pop();
-  if (!last) return false;
-  const code = last.codePointAt(0);
-  // Consonant block in Tigalari (rough consonant range)
-  // According to Unicode chart, letters occupy roughly U+11390..U+113B5
-  return (code >= 0x11390 && code <= 0x113B5);
+// --- CONSTANTS USED FOR SHAPING LOGIC ---
+const CONJOINER = '\u{113D0}';   // Conjunct / post-base trigger
+const VIRAMA    = '\u{113CE}';   // Standard virama
+const LOOPED_VIRAMA = '\u{113CF}'; // Special ligating virama
+const REPHA     = '\u{113D1}';   // Repha (initial ra in clusters)
+
+// Helper: is a Tulu consonant
+function isCons(code) {
+  if (!code) return false;
+  const cp = [...code].pop().codePointAt(0);
+  return cp >= 0x11390 && cp <= 0x113B5;
 }
 
-// === 2. Transliteration Engine (longest-match, Unicode-safe) ===
-export function transliterate(latin) {
+// Helper: is a dependent vowel sign available?
+function hasMatra(entry) {
+  return entry && entry.d;
+}
+
+// Helper: is a vowel entry?
+function isVowelEntry(entry) {
+  return entry && (entry.i !== undefined);
+}
+
+// Longest match extraction
+function matchToken(chars, i, keys) {
+  for (let L = 3; L >= 1; L--) {
+    const slice = chars.slice(i, i + L).join('');
+    if (keys.includes(slice)) return { token: slice, len: L };
+  }
+  return { token: null, len: 0 };
+}
+
+export function transliterate(input) {
+  const chars = [...input];
   let out = '';
-  const chars = [...latin]; // unicode-safe split of input
+
+  let inCluster = false;     // Are we building a consonant cluster?
+  let justVirama = false;    // Did user explicitly type virama?
+  let lastWasConsonant = false;
+  let lastConsonantChar = null;
 
   for (let i = 0; i < chars.length; ) {
-    // build the longest possible token from the current position
-    // try up to 3 characters (adjust if you want longer digraphs)
-    let token = null;
-    let tokenLen = 0;
 
-    // Attempt matches from longest to shortest
-    for (let L = 3; L >= 1; L--) {
-      const slice = chars.slice(i, i + L).join('');
-      if (!slice) continue;
-      // check direct key
-      if (tuluMap.hasOwnProperty(slice)) {
-        token = slice;
-        tokenLen = L;
-        break;
-      }
-    }
+    const { token, len } = matchToken(chars, i, mapKeysSorted);
 
-    // If no token found, emit raw character and advance 1
     if (!token) {
+      // raw passthrough character
       out += chars[i];
-      i += 1;
+      lastWasConsonant = false;
+      inCluster = false;
+      i++;
       continue;
     }
 
     const entry = tuluMap[token];
 
-    // Handle different entry types: consonant (c), independent vowel (i), signs (s), numbers (num)
-    if (entry.c) {
-      // Append consonant letter
-      out += entry.c;
-    } else if (entry.i !== undefined) {
-      // Independent vowel
-      const prevIsCons = isTuluConsonant(out);
-      if (prevIsCons && entry.d) {
-        // If previous was consonant and a dependent sign exists, append the dependent sign
-        out += entry.d;
+    // --- 1. SIGNS (anusvara, visarga, explicit virama etc.) ---
+    if (entry.s) {
+      if (token === 'virama') {
+        out += VIRAMA;
+        justVirama = true;
+        inCluster = true;      // explicitly continues cluster
+        lastWasConsonant = false;
       } else {
-        // Otherwise append the independent vowel
-        out += entry.i;
+        out += entry.s;
+        justVirama = false;
+        lastWasConsonant = false;
       }
-    } else if (entry.s) {
-      // Sign (anusvara/visarga/virama etc.)
-      out += entry.s;
-    } else if (entry.sign) {
-      // explicit vowel sign alias
-      out += entry.sign;
-    } else if (entry.num) {
-      out += entry.num;
-    } else {
-      // fallback: append nothing or raw
-      out += chars.slice(i, i + tokenLen).join('');
+      i += len;
+      continue;
     }
 
-    i += tokenLen;
+    // --- 2. CONSONANTS ---
+    if (entry.c) {
+
+      // Repha case: RA at start of cluster + followed by consonant
+      if (token === 'r' && lastWasConsonant === false && inCluster === true) {
+        out += REPHA;
+        i += len;
+        continue;
+      }
+
+      // If previous was consonant and user didn’t insert a virama,
+      // automatically build conjunct using CONJOINER.
+      if (lastWasConsonant && !justVirama) {
+        out += CONJOINER;
+      }
+
+      out += entry.c;
+
+      inCluster = true;
+      lastWasConsonant = true;
+      justVirama = false;
+      lastConsonantChar = entry.c;
+
+      i += len;
+      continue;
+    }
+
+    // --- 3. VOWELS ---
+    if (isVowelEntry(entry)) {
+
+      if (lastWasConsonant) {
+        // Consonant + vowel ⇒ dependent form
+        if (entry.d) {
+          out += entry.d;
+        } else {
+          // fallback independent if sign missing
+          out += entry.i;
+        }
+      } else {
+        // standalone vowel
+        out += entry.i;
+      }
+
+      // vowels break clusters
+      inCluster = false;
+      justVirama = false;
+      lastWasConsonant = false;
+
+      i += len;
+      continue;
+    }
+
+    // --- 4. EXPLICIT VOWEL SIGNS ---
+    if (entry.sign) {
+      if (lastWasConsonant) {
+        out += entry.sign;
+      } else {
+        // if no consonant, convert sign into independent vowel?
+        // strict mode: just output sign
+        out += entry.sign;
+      }
+
+      inCluster = false;
+      justVirama = false;
+      lastWasConsonant = false;
+
+      i += len;
+      continue;
+    }
+
+    // --- 5. NUMBERS ---
+    if (entry.num) {
+      out += entry.num;
+      inCluster = false;
+      lastWasConsonant = false;
+      i += len;
+      continue;
+    }
+
+    // fallback
+    out += token;
+    i += len;
   }
 
   return out;
