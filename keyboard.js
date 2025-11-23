@@ -90,12 +90,15 @@ const test = new TypingTest("vennakam", () => typedText, showCompletionModal);
 
 // === 4. Build Keyboard ===
 function createKeyboard() {
+  console.log('createKeyboard() called, currentLayout is:', currentLayout);
   const keyboard = document.getElementById('keyboard');
   if (!keyboard) return;
   keyboard.innerHTML = '';
   const activeLayout = currentLayout === 'A' ? layoutA : layoutB;
+  console.log('Using layout:', currentLayout, 'Layout contents:', activeLayout);
 
-  activeLayout.forEach(row => {
+  activeLayout.forEach((row, rowIndex) => {
+    console.log(`Building row ${rowIndex}:`, row);
     const rowDiv = document.createElement('div');
     rowDiv.classList.add('key-row');
 
@@ -112,31 +115,20 @@ function createKeyboard() {
       else if (key === '⇧') {
         keyDiv.textContent = 'Shift';
         keyDiv.classList.add('key-shift');
+        console.log('Creating shift key, key value:', key);
       }
       else keyDiv.textContent = key;
 
-      keyDiv.addEventListener('touchstart', e => {
-        e.preventDefault();
-        
-        // Handle backspace with hold-to-repeat
-        if (key === '⌫') {
-          processKey('⌫');
-          
-          // Start delayed auto-repeat
-          backspaceTimeout = setTimeout(() => {
-            backspaceInterval = setInterval(() => processKey('⌫'), 50);
-          }, 300);
-        } else {
-          handleTouchStart(e, keyDiv, key);
-        }
-      }, { passive: false });
-      
       keyDiv.addEventListener('mousedown', e => {
+        console.log('Mouse down on key:', key, 'Current layout before:', currentLayout);
         e.preventDefault();
         if (key === '⇧') {
+          console.log('Shift mouse click! Current layout:', currentLayout);
           // switch layouts
           currentLayout = currentLayout === 'A' ? 'B' : 'A';
+          console.log('Switching to layout:', currentLayout);
           createKeyboard(); // rebuild UI
+          console.log('After rebuild, currentLayout is:', currentLayout);
           return; // don't type anything
         }
 
@@ -153,7 +145,39 @@ function createKeyboard() {
         }
       });
 
-      keyDiv.addEventListener('touchstart', e => handleTouchStart(e, keyDiv, key), { passive: false });
+      keyDiv.addEventListener('touchstart', e => {
+        console.log('Touch start on key:', key, 'Current layout before:', currentLayout);
+        if (e.cancelable) e.preventDefault();
+        
+        // Handle Shift key
+        if (key === '⇧') {
+          console.log('Shift key detected! Current layout:', currentLayout);
+          currentLayout = currentLayout === 'A' ? 'B' : 'A';
+          console.log('Switching to layout:', currentLayout);
+          createKeyboard();
+          console.log('After rebuild, currentLayout is:', currentLayout);
+          highlight(keyDiv);
+          console.log('Shift key processing complete');
+          return;
+        }
+        
+        // Handle backspace with hold-to-repeat
+        if (key === '⌫') {
+          console.log('Backspace key detected');
+          processKey('⌫');
+          highlight(keyDiv);
+          
+          // Start delayed auto-repeat
+          backspaceTimeout = setTimeout(() => {
+            backspaceInterval = setInterval(() => processKey('⌫'), 50);
+          }, 300);
+          return;
+        }
+        
+        // Handle all other keys (swipeable)
+        console.log('Regular key, passing to handleTouchStart:', key);
+        handleTouchStart(e, keyDiv, key);
+      }, { passive: false });
 
       rowDiv.appendChild(keyDiv);
     });
@@ -238,13 +262,7 @@ function selectSuggestion(s) {
 
 // === 6. Touch Handling ===
 function handleTouchStart(e, keyDiv, key) {
-  // === Handle Shift key on touch ===
-  if (key === '⇧') {
-    currentLayout = currentLayout === 'A' ? 'B' : 'A';
-    createKeyboard(); // Rebuild keyboard with new layout
-    return; // Do not initiate swipe
-  }
-
+  console.log('handleTouchStart called with key:', key);
   isSwiping = true;
   swipeKeys.clear();
   highlight(keyDiv);
@@ -370,11 +388,6 @@ function updateProgressBar(current, total) {
     progressBar.style.width = `${Math.min(percentage, 100)}%`;
     
     // Celebrate milestones
-    if (percentage === 25 || percentage === 50 || percentage === 75) {
-      progressBar.setAttribute('data-milestone', 'true');
-      setTimeout(() => progressBar.removeAttribute('data-milestone'), 500);
-      celebrateMilestone(percentage);
-    }
   }
   
   if (progressText) {
