@@ -2,36 +2,43 @@ import { predict } from "./predictiveEngine.js";
 import { transliterate } from "./transliteration.js";
 import { TypingTest } from "./testmode.js";
 
+let activeVariantIndex = 0;
+let activeVariants = [];
 let backspaceInterval = null;
 let backspaceTimeout = null;
-let currentLayout = 'A';
+let longPressTimeout = null;
+let diacriticPopup = null;
+let currentKey = null;
 
-// === 3. Keyboard Layout ===
-const layoutA = [
-  // Row 1: Q(ɛ) W(ụ) E R T(ṭ) Y U I O P
-  ['q', 'u', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-
-  // Row 2: A S D(ḍ) G H J K L(ḷ)
-  ['⇧', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', '⌫',],
-
-  // Row 4: Remaining Nasals, Liquids, and Misc (Centered)
-  ['caps','z', ,'x', 'c', 'v', 'b', 'n', 'm', , '⏎'],
-
+// === Keyboard Layout with Diacriticals ===
+const keyboardLayout = [
+  // Row 1
+  ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+  // Row 2
+  ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', '⌫'],
+  // Row 3
+  ['z', 'x', 'c', 'v', 'b', 'n', 'm', '⏎'],
+  // Row 4
   ['space']
 ];
 
-const layoutB = [
-  // Row 1: Q(ɛ) W(ụ) E R T(ṭ) Y U I O P
-  ['q', 'ụ', 'ɛ', 'ṛ', 'ṟ', 'ṭ', 'ụ', 'i', 'o', 'p'],
-
-  // Row 2: A S D(ḍ) G H J K L(ḷ)
-  ['⇧', 'ś', 'ṣ', 'ḍ', 'f', 'h', 'ḥ', 'j', 'ḻ', 'ḷ', '⌫'],
-
-  // Row 3: Z(ś) X(ṣ) C V B N(ṇ) M(ṃ)
-  ['caps', 'z', 'x', 'ṅ', 'ñ', 'ṇ', 'm', 'ṃ', '⏎'],
-  
-  ['space']
-];
+// Diacritical variants for each base letter
+const diacriticals = {
+  'a': ['a', 'ā', 'ă'],
+  'e': ['e', 'ɛ', 'ē'],
+  'i': ['i', 'ī', 'ĭ'],
+  'o': ['o', 'ō', 'ŏ'],
+  'u': ['u', 'ū', 'ụ', 'ŭ'],
+  'r': ['r', 'ṛ', 'ṟ'],
+  't': ['t', 'ṭ'],
+  'd': ['d', 'ḍ'],
+  'n': ['n', 'ṇ', 'ñ', 'ṅ'],
+  'l': ['l', 'ḷ', 'ḻ'],
+  's': ['s', 'ś', 'ṣ'],
+  'h': ['h', 'ḥ'],
+  'm': ['m', 'ṃ'],
+  // Add more as needed
+};
 
 let typedText = '';
 let suggestions = [];
@@ -88,17 +95,13 @@ function showCompletionModal(elapsed, wpm, accuracy) {
 // === NOW create test instance with callback ===
 const test = new TypingTest("vennakam", () => typedText, showCompletionModal);
 
-// === 4. Build Keyboard ===
+// === Build Keyboard ===
 function createKeyboard() {
-  console.log('createKeyboard() called, currentLayout is:', currentLayout);
   const keyboard = document.getElementById('keyboard');
   if (!keyboard) return;
   keyboard.innerHTML = '';
-  const activeLayout = currentLayout === 'A' ? layoutA : layoutB;
-  console.log('Using layout:', currentLayout, 'Layout contents:', activeLayout);
 
-  activeLayout.forEach((row, rowIndex) => {
-    console.log(`Building row ${rowIndex}:`, row);
+  keyboardLayout.forEach((row, rowIndex) => {
     const rowDiv = document.createElement('div');
     rowDiv.classList.add('key-row');
 
@@ -110,73 +113,44 @@ function createKeyboard() {
         keyDiv.textContent = 'Space';
         keyDiv.classList.add('key-space');
       }
-      else if (key === '⌫') keyDiv.textContent = '⌫';
-      else if (key === '⏎') keyDiv.textContent = 'Enter';
-      else if (key === '⇧') {
-        keyDiv.textContent = 'Shift';
-        keyDiv.classList.add('key-shift');
-        console.log('Creating shift key, key value:', key);
+      else if (key === '⌫') {
+        keyDiv.textContent = '⌫';
+        keyDiv.classList.add('key-special');
       }
-      else keyDiv.textContent = key;
+      else if (key === '⏎') {
+        keyDiv.textContent = 'Enter';
+        keyDiv.classList.add('key-special');
+      }
+      else {
+        keyDiv.textContent = key;
+        // Add indicator if key has diacriticals
+        if (diacriticals[key]) {
+          const indicator = document.createElement('span');
+          indicator.className = 'diacritic-indicator';
+          indicator.textContent = '•••';
+          keyDiv.appendChild(indicator);
+        }
+      }
 
+      // Mouse events
       keyDiv.addEventListener('mousedown', e => {
-        console.log('Mouse down on key:', key, 'Current layout before:', currentLayout);
         e.preventDefault();
-        if (key === '⇧') {
-          console.log('Shift mouse click! Current layout:', currentLayout);
-          // switch layouts
-          currentLayout = currentLayout === 'A' ? 'B' : 'A';
-          console.log('Switching to layout:', currentLayout);
-          createKeyboard(); // rebuild UI
-          console.log('After rebuild, currentLayout is:', currentLayout);
-          return; // don't type anything
-        }
-
-        if (key === '⌫') {
-          // delete once
-          processKey('⌫');
-
-          // start delayed auto-repeat
-          backspaceTimeout = setTimeout(() => {
-            backspaceInterval = setInterval(() => processKey('⌫'), 50);
-          }, 300); // start repeating after 300ms hold
-        } else {
-          processKey(key);
-        }
+        handleKeyPress(key, keyDiv, e);
       });
 
+      keyDiv.addEventListener('mouseup', e => {
+        handleKeyRelease(key);
+      });
+
+      // Touch events
       keyDiv.addEventListener('touchstart', e => {
-        console.log('Touch start on key:', key, 'Current layout before:', currentLayout);
         if (e.cancelable) e.preventDefault();
-        
-        // Handle Shift key
-        if (key === '⇧') {
-          console.log('Shift key detected! Current layout:', currentLayout);
-          currentLayout = currentLayout === 'A' ? 'B' : 'A';
-          console.log('Switching to layout:', currentLayout);
-          createKeyboard();
-          console.log('After rebuild, currentLayout is:', currentLayout);
-          highlight(keyDiv);
-          console.log('Shift key processing complete');
-          return;
-        }
-        
-        // Handle backspace with hold-to-repeat
-        if (key === '⌫') {
-          console.log('Backspace key detected');
-          processKey('⌫');
-          highlight(keyDiv);
-          
-          // Start delayed auto-repeat
-          backspaceTimeout = setTimeout(() => {
-            backspaceInterval = setInterval(() => processKey('⌫'), 50);
-          }, 300);
-          return;
-        }
-        
-        // Handle all other keys (swipeable)
-        console.log('Regular key, passing to handleTouchStart:', key);
-        handleTouchStart(e, keyDiv, key);
+        handleKeyPress(key, keyDiv, e);
+      }, { passive: false });
+
+      keyDiv.addEventListener('touchend', e => {
+        if (e.cancelable) e.preventDefault();
+        handleKeyRelease(key);
       }, { passive: false });
 
       rowDiv.appendChild(keyDiv);
@@ -184,12 +158,144 @@ function createKeyboard() {
 
     keyboard.appendChild(rowDiv);
   });
-
-  document.addEventListener('touchmove', handleTouchMove, { passive: false });
-  document.addEventListener('touchend', handleTouchEnd);
 }
 
-// === 5. Key Logic + Predictions ===
+// === Key Press Handler ===
+function handleKeyPress(key, keyDiv, event) {
+  currentKey = key;
+  
+  // Handle backspace immediately and start repeat
+  if (key === '⌫') {
+    processKey('⌫');
+    highlight(keyDiv);
+    
+    backspaceTimeout = setTimeout(() => {
+      backspaceInterval = setInterval(() => processKey('⌫'), 50);
+    }, 300);
+    return;
+  }
+
+  // Handle Enter and Space immediately
+  if (key === '⏎' || key === 'space') {
+    processKey(key);
+    highlight(keyDiv);
+    return;
+  }
+
+  // For keys with diacriticals, show popup after long press
+  if (diacriticals[key]) {
+    highlight(keyDiv);
+    
+    longPressTimeout = setTimeout(() => {
+      showDiacriticalPopup(key, keyDiv, event);
+    }, 500); // 500ms long press
+  } else {
+    // Keys without diacriticals are typed immediately
+    processKey(key);
+    highlight(keyDiv);
+  }
+}
+
+// === Key Release Handler ===
+function handleKeyRelease(key) {
+  clearTimeout(backspaceTimeout);
+  clearInterval(backspaceInterval);
+  clearTimeout(longPressTimeout);
+  
+  // If popup is showing, don't type the base character
+  if (diacriticPopup) {
+    // Do nothing here. Selection handled by touchend logic above.
+    return;
+  }
+
+  
+  // If key has diacriticals but popup wasn't shown (short press), type base character
+  if (diacriticals[key] && currentKey === key) {
+    processKey(key);
+  }
+  
+  currentKey = null;
+}
+
+// === Diacritical Popup ===
+function showDiacriticalPopup(baseKey, keyDiv, event) {
+  const variants = diacriticals[baseKey];
+  if (!variants) return;
+
+  activeVariants = variants;
+
+  diacriticPopup = document.createElement('div');
+  diacriticPopup.className = 'diacritic-popup';
+
+  const rect = keyDiv.getBoundingClientRect();
+  diacriticPopup.style.left = `${rect.left + rect.width / 2}px`;
+  diacriticPopup.style.bottom = `${window.innerHeight - rect.top + 10}px`;
+
+  variants.forEach((variant, index) => {
+    const variantDiv = document.createElement('div');
+    variantDiv.className = 'diacritic-variant';
+    variantDiv.textContent = variant;
+    variantDiv.dataset.index = index;
+
+    if (index === 0) variantDiv.classList.add('active-variant');
+
+    diacriticPopup.appendChild(variantDiv);
+  });
+
+  document.body.appendChild(diacriticPopup);
+
+  setTimeout(() => diacriticPopup.classList.add('show'), 10);
+
+  // 👇 CORE TOUCH GESTURE LOGIC
+  document.addEventListener('touchmove', handleVariantSwipe, { passive: false });
+  document.addEventListener('touchend', confirmVariantSelection, { passive: false });
+}
+
+function handleVariantSwipe(e) {
+  if (!diacriticPopup) return;
+
+  e.preventDefault();
+
+  const touch = e.touches[0];
+  const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
+
+  const hovered = elements.find(el => el.classList.contains('diacritic-variant'));
+  if (!hovered) return;
+
+  const index = Number(hovered.dataset.index);
+  setActiveVariant(index);
+}
+
+function setActiveVariant(index) {
+  activeVariantIndex = index;
+
+  const children = diacriticPopup.querySelectorAll('.diacritic-variant');
+  children.forEach(el => el.classList.remove('active-variant'));
+  children[index].classList.add('active-variant');
+}
+
+function confirmVariantSelection(e) {
+  if (!diacriticPopup) return;
+
+  e.preventDefault();
+
+  const chosen = activeVariants[activeVariantIndex];
+  processKey(chosen);
+  hideDiacriticalPopup();
+
+  document.removeEventListener('touchmove', handleVariantSwipe);
+  document.removeEventListener('touchend', confirmVariantSelection);
+}
+
+
+function hideDiacriticalPopup() {
+  if (diacriticPopup) {
+    diacriticPopup.remove();
+    diacriticPopup = null;
+  }
+}
+
+// === Key Processing ===
 function processKey(key) {
   // Start timer when first non-backspace key is pressed
   if (!test.testStarted && !test.testFinished && key !== "⌫") {
@@ -260,65 +366,12 @@ function selectSuggestion(s) {
   updateSuggestions();
 }
 
-// === 6. Touch Handling ===
-function handleTouchStart(e, keyDiv, key) {
-  console.log('handleTouchStart called with key:', key);
-  isSwiping = true;
-  swipeKeys.clear();
-  highlight(keyDiv);
-  swipeKeys.add(key);
-  lastKey = keyDiv;
-  if (e.cancelable) e.preventDefault();
-}
-
-function handleTouchMove(e) {
-  if (!isSwiping) return;
-  if (e.cancelable) e.preventDefault();
-
-  const touch = e.touches[0];
-  const el = document.elementFromPoint(touch.clientX, touch.clientY);
-
-  if (el && el.classList.contains('key') && el !== lastKey) {
-    highlight(el);
-    const val =
-      el.textContent === 'Space' ? 'space' :
-      el.textContent === 'Enter' ? '⏎' :
-      el.textContent === '⌫' ? '⌫' :
-      el.textContent;
-    swipeKeys.add(val);
-    lastKey = el;
-  }
-}
-
-function handleTouchEnd() {
-  if (!isSwiping) return;
-  const glide = Array.from(swipeKeys).join('');
-  if (glide.length > 0) processKey(glide);
-  clearHighlights();
-  swipeKeys.clear();
-  isSwiping = false;
-}
-
 function highlight(el) {
   el.classList.add('active');
   setTimeout(() => el.classList.remove('active'), 200);
 }
 
-function clearHighlights() {
-  document.querySelectorAll('.key').forEach(k => k.classList.remove('active'));
-}
-
-document.addEventListener('touchend', () => {
-  clearTimeout(backspaceTimeout);
-  clearInterval(backspaceInterval);
-});
-
-document.addEventListener('mouseup', () => {
-  clearTimeout(backspaceTimeout);
-  clearInterval(backspaceInterval);
-});
-
-// === 7. Progress Indicator Functions ===
+// === Progress Indicator Functions ===
 function highlightAccuracy(typed, target) {
   const targetEl = document.getElementById('target-text');
   if (!targetEl) return;
@@ -388,6 +441,10 @@ function updateProgressBar(current, total) {
     progressBar.style.width = `${Math.min(percentage, 100)}%`;
     
     // Celebrate milestones
+    if (percentage === 25 || percentage === 50 || percentage === 75) {
+      progressBar.setAttribute('data-milestone', 'true');
+      setTimeout(() => progressBar.removeAttribute('data-milestone'), 500);
+    }
   }
   
   if (progressText) {
@@ -395,10 +452,8 @@ function updateProgressBar(current, total) {
   }
 }
 
-
-
-// === 8. Initialize ===
-window.tuluTest = test; // Make test accessible globally for debugging
+// === Initialize ===
+window.tuluTest = test;
 
 createKeyboard();
 document.getElementById("target-text").textContent = test.testTarget;

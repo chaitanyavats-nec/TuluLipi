@@ -50,10 +50,10 @@ const tuluMap = {
   'ñ':  { c: '\u{1139B}' },
 
   // Retroflex (cerebral)
-  'tt':  { c: '\u{1139C}' },  // TTA (retroflex)
-  'tth': { c: '\u{1139D}' },  // TTHA
-  'dd':  { c: '\u{1139E}' },  // DDA
-  'ddh': { c: '\u{1139F}' },  // DDHA
+  'ṭ':  { c: '\u{1139C}' },  // TTA (retroflex)
+  'ṭh': { c: '\u{1139D}' },  // TTHA
+  'ḍ':  { c: '\u{1139E}' },  // DDA
+  'ḍh': { c: '\u{1139F}' },  // DDHA
   'nng': { c: '\u{113A0}' },  // NNA (retroflex nasal) - alias
   'ṇ':   { c: '\u{113A0}' },
 
