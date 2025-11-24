@@ -22,10 +22,10 @@ const tuluMap = {
 
 // Long vowels (NOTE: E and O are NOT in traditional Tulu-Tigalari per proposal)
   'ee': { i: '\u{1138B}', d: '\u{113C2}' },        // LETTER EE / VOWEL SIGN EE
-  'ē':  { i: '\u{1138B}', d: '\u{113C2}' },        // diacritic alias
+  /* fallback*/ 'ē':  { i: '\u{1138B}', d: '\u{113C2}' },        // diacritic alias
   'ai': { i: '\u{1138E}', d: '\u{113C5}' },        // LETTER AI / VOWEL SIGN AI
   'oo': { i: '\u{11390}', d: '\u{113C7}' },        // LETTER OO / VOWEL SIGN OO
-  'ō':  { i: '\u{11390}', d: '\u{113C7}' },        // diacritic alias
+  /* fallback*/ 'ō':  { i: '\u{11390}', d: '\u{113C7}' },        // diacritic alias
   'au': { i: '\u{11391}', d: '\u{113C8}' },        // LETTER AU / VOWEL SIGN AU
 
   // common orthographic signs
@@ -50,10 +50,10 @@ const tuluMap = {
   'ñ':  { c: '\u{1139B}' },
 
   // Retroflex (cerebral)
-  'tt':  { c: '\u{1139C}' },  // TTA (retroflex)
-  'tth': { c: '\u{1139D}' },  // TTHA
-  'dd':  { c: '\u{1139E}' },  // DDA
-  'ddh': { c: '\u{1139F}' },  // DDHA
+  'ṭ':  { c: '\u{1139C}' },  // TTA (retroflex)
+  'ṭh': { c: '\u{1139D}' },  // TTHA
+  'ḍ':  { c: '\u{1139E}' },  // DDA
+  'ḍh': { c: '\u{1139F}' },  // DDHA
   'nng': { c: '\u{113A0}' },  // NNA (retroflex nasal) - alias
   'ṇ':   { c: '\u{113A0}' },
 
@@ -80,7 +80,9 @@ const tuluMap = {
 
   // Sibilants & fricatives
   'sh':  { c: '\u{113AF}' },  // SHA
+  /* fallback*/ 'ś':  { c: '\u{113AF}' },
   'ss':  { c: '\u{113B0}' },  // SSA
+  /* fallback*/  'ṣ':  { c: '\u{113B0}' },  // SSA  
   's':   { c: '\u{113B1}' },  // SA
   'h':   { c: '\u{113B2}' },  // HA
 
