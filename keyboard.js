@@ -24,11 +24,9 @@ const keyboardLayout = [
 
 // Diacritical variants for each base letter
 const diacriticals = {
-  'a': ['a', 'ā', 'ă'],
-  'e': ['e', 'ɛ', 'ē'],
+  'e': ['e', 'ɛ'],
   'i': ['i', 'ī', 'ĭ'],
-  'o': ['o', 'ō', 'ŏ'],
-  'u': ['u', 'ū', 'ụ', 'ŭ'],
+  'u': ['u', 'ụ'],
   'r': ['r', 'ṛ', 'ṟ'],
   't': ['t', 'ṭ'],
   'd': ['d', 'ḍ'],
@@ -330,6 +328,35 @@ function updateDisplay() {
   }
 }
 
+function copyTigalariText() {
+  const tuluText = transliterate(typedText);
+  
+  if (!tuluText || tuluText.trim() === '') {
+    alert('No text to copy!');
+    return;
+  }
+  
+  // Copy to clipboard
+  navigator.clipboard.writeText(tuluText).then(() => {
+    // Success feedback
+    const btn = document.getElementById('copy-btn');
+    const originalText = btn.textContent;
+    
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    
+    // Reset after 2 seconds
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(err => {
+    // Fallback for older browsers
+    console.error('Failed to copy:', err);
+    alert('Could not copy text. Please select and copy manually.');
+  });
+}
+
 function updateSuggestions() {
   const words = typedText.split(' ');
   const currentWord = words[words.length - 1];
@@ -457,3 +484,8 @@ window.tuluTest = test;
 
 createKeyboard();
 document.getElementById("target-text").textContent = test.testTarget;
+
+const copyBtn = document.getElementById('copy-btn');
+if (copyBtn) {
+  copyBtn.addEventListener('click', copyTigalariText);
+}
