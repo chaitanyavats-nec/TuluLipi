@@ -1,6 +1,6 @@
-import { predict } from "./predictiveEngine.js";
-import { transliterate } from "./transliteration.js";
-import { TypingTest } from "./testmode.js";
+import { predict } from "../predictiveEngine.js";
+import { transliterate } from "../transliteration.js";
+import { TypingTest } from "../testmode.js";
 
 let activeVariantIndex = 0;
 let activeVariants = [];
@@ -478,14 +478,16 @@ function updateProgressBar(current, total) {
     progressText.textContent = `${current} / ${total}`;
   }
 }
-
-// === Initialize ===
-window.tuluTest = test;
-
-createKeyboard();
-document.getElementById("target-text").textContent = test.testTarget;
-
 const copyBtn = document.getElementById('copy-btn');
 if (copyBtn) {
   copyBtn.addEventListener('click', copyTigalariText);
 }
+
+// === Initialize ===
+window.tuluTest = test;
+
+export function initKeyboard() {
+  createKeyboard();
+  document.getElementById("target-text").textContent = test.testTarget;
+}
+

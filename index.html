@@ -8,6 +8,11 @@
 </head>
 <body>
     <div class="app-container">
+        <div class="keyboard-selector">
+            <button class='keyboard-button' data-keyboard="1">Keyboard Design 1</button>
+            <button class='keyboard-button' data-keyboard="2">Keyboard Design 2</button>
+        </div>
+
         <div class="display-container">
             <!-- Enhanced Typing Test Container -->
             <div id="typing-test-container">
@@ -60,7 +65,7 @@
         </div>
     </div>
     
-    <script type="module" src="keyboard.js"></script>
+    <script type="module" src="keyboardLoader.js"></script>
     <script type="module">
         import { initWelcomeModal } from "./welcome.js";
         initWelcomeModal();
