@@ -86,7 +86,7 @@ function showCompletionModal(elapsed, wpm, accuracy) {
 }
 
 // === NOW create test instance with callback ===
-const test = new TypingTest("vennakam", () => typedText, showCompletionModal);
+const test = new TypingTest("onji baaṇaalada yeradu cup akki nii neṇsoothu aiku neeru padthu jekkla bethhu baaṇaalani stove mithhu ijilaa", () => typedText, showCompletionModal);
 
 // === 4. Build Keyboard ===
 function createKeyboard() {

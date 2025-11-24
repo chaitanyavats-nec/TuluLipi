@@ -71,7 +71,7 @@ body {
 
 .tulu-text {
     font-family: 'TuluLipi', serif;
-    font-size: 24px;
+    font-size: 32px;
     color: #f0f0f0;
     min-height: 32px;
 }
@@ -621,10 +621,15 @@ body {
 .keyboard-button {
     padding: 8px 16px;
     color: #aaa;
-    background: #2a2a2a;
+    background: #2e2e30;
     border-radius: 8px;
     font-weight: 500;
     min-width: 80px;
+}
+
+button {
+    border: #2e2e30;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* ============================================

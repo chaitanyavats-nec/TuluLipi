@@ -34,3 +34,7 @@ document.querySelectorAll("[data-keyboard]").forEach(btn => {
 // Auto-load last used keyboard
 const saved = localStorage.getItem("keyboardPreference") || "1";
 loadKeyboard(saved);
+
+document.querySelector(".reload-button").addEventListener("click", () => {
+  location.reload();
+});
