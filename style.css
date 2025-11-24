@@ -71,7 +71,7 @@ body {
 
 .tulu-text {
     font-family: 'TuluLipi', serif;
-    font-size: 24px;
+    font-size: 32px;
     color: #f0f0f0;
     min-height: 32px;
 }
@@ -226,8 +226,12 @@ body {
 .key-special {
     flex: 1.5 1 auto;
     max-width: 70px;
+    font-weight: 600;
     font-size: 1rem;
     background: #3a3a3c;
+}
+.key-shift{
+    min-width: 40px;
 }
 
 /* ============================================
@@ -617,10 +621,15 @@ body {
 .keyboard-button {
     padding: 8px 16px;
     color: #aaa;
-    background: #2a2a2a;
+    background: #2e2e30;
     border-radius: 8px;
     font-weight: 500;
     min-width: 80px;
+}
+
+button {
+    border: #2e2e30;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* ============================================
@@ -680,6 +689,10 @@ body {
     
     .key-special {
         font-size: 0.95rem;
+    }
+
+    .key-shift{
+        padding: 0px 15px !important;
     }
 }
 
