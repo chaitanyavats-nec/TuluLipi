@@ -366,7 +366,13 @@ body {
     min-width: 80px;
 }
 
+#roman-output {
+    height: fit-content;
+    min-height: 16px;
+}
+
 #progress-bar {
+    display: none;
     width: 0;
     height: 4px;
     background: linear-gradient(90deg, #4c9eff, #667eea);
