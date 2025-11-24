@@ -226,8 +226,12 @@ body {
 .key-special {
     flex: 1.5 1 auto;
     max-width: 70px;
+    font-weight: 600;
     font-size: 1rem;
     background: #3a3a3c;
+}
+.key-shift{
+    min-width: 40px;
 }
 
 /* ============================================
@@ -680,6 +684,10 @@ body {
     
     .key-special {
         font-size: 0.95rem;
+    }
+
+    .key-shift{
+        padding: 0px 15px !important;
     }
 }
 
