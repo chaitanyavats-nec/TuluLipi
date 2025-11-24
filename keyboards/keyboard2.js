@@ -113,7 +113,7 @@ function createKeyboard() {
       else if (key === '⌫') keyDiv.textContent = '⌫';
       else if (key === '⏎') keyDiv.textContent = 'Enter';
       else if (key === '⇧') {
-        keyDiv.textContent = 'Shift';
+        keyDiv.textContent = '⇧';
         keyDiv.classList.add('key-shift');
         console.log('Creating shift key, key value:', key);
       }
