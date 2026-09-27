@@ -2,74 +2,73 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark">
     <title>Tulu-Tigalari Keyboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app-container">
-        <div class="keyboard-selector">
-            <button class='keyboard-button' data-keyboard="1"> Long Press</button>
-            <button class='keyboard-button' data-keyboard="2">Shift Layer</button>
-            <button class="keyboard-button reload-button" title="Reload Keyboard">Reload ⟳</button>
-        </div>
+        <main class="workspace">
+            <div class="keyboard-selector" role="group" aria-label="Keyboard layout">
+                <button type="button" class="keyboard-button" data-keyboard="1" aria-pressed="false">Long Press</button>
+                <button type="button" class="keyboard-button" data-keyboard="2" aria-pressed="false">Shift Layer</button>
+                <button type="button" id="reset-btn" class="keyboard-button" title="Clear the text and restart the typing test">Reset</button>
+            </div>
 
-        <div class="display-container">
-            <!-- Enhanced Typing Test Container -->
-            <div id="typing-test-container">
-                <div id="target-text" class="target-display">vennakam</div>
-                
-                <!-- Progress Bar -->
-                <div id="progress-container" class="progress-container">
-                    <div class="progress-bar-wrapper">
-                        <div id="progress-bar" class="progress-bar"></div>
+            <section class="display-container" aria-label="Typing test and output">
+                <div id="typing-test-container">
+                    <p id="target-text" class="target-display" aria-label="Text to type"></p>
+
+                    <div id="progress-container" class="progress-container" hidden>
+                        <div class="progress-bar-wrapper">
+                            <div id="progress-bar" class="progress-bar"></div>
+                        </div>
+                        <div id="progress-text" class="progress-text"></div>
                     </div>
-                    <div id="progress-text" class="progress-text">0 / 9</div>
+
+                    <div id="live-stats" class="live-stats">
+                        <span id="live-time" class="stat-badge">Time: 0.0s</span>
+                        <span id="live-wpm" class="stat-badge">WPM: 0</span>
+                        <span id="live-accuracy" class="stat-badge">Accuracy: 100%</span>
+                    </div>
                 </div>
-                
-                <!-- Live Stats -->
-                <div id="live-stats" class="live-stats">
-                    <span id="live-time" class="stat-badge">Time: 0.0s</span>
-                    <span id="live-wpm" class="stat-badge">WPM: 0</span>
-                    <span id="live-accuracy" class="stat-badge">Accuracy: 100%</span>
+
+                <div class="tulu-output-container">
+                    <div id="tulu-output" class="tulu-text" lang="tcy" role="textbox" aria-readonly="true"
+                         aria-multiline="true" aria-label="Tulu script output" tabindex="0"
+                         data-placeholder="Tulu output..."></div>
+                    <button type="button" id="copy-btn" class="copy-button" title="Copy Tigalari text">Copy</button>
                 </div>
-            </div>
-            
-            <!-- Output Displays -->
-             <div class="tulu-output-container">
-                <div id="tulu-output" class="tulu-text" placeholder="Tulu output..."></div>
-                <button id="copy-btn" class="copy-button" title="Copy Tigalari text">
-                    Copy
-                </button>
-            </div>
-            <div id="roman-output" class="roman-text" placeholder="Type here..."></div>
+                <div id="roman-output" class="roman-text" lang="tcy-Latn" role="textbox" aria-readonly="true"
+                     aria-multiline="true" aria-label="Typed text" tabindex="0"
+                     data-placeholder="Type here..."></div>
+            </section>
+        </main>
+
+        <div class="keyboard-dock">
+            <div id="suggestion-bar" class="suggestion-bar" role="group" aria-label="Word suggestions"></div>
+            <div id="keyboard" class="keyboard" role="group" aria-label="On-screen keyboard"></div>
         </div>
-        
-        <!-- Suggestion Bar -->
-        <div id="suggestion-bar" class="suggestion-bar"></div>
-        
-        <!-- Keyboard -->
-        <div id="keyboard" class="keyboard"></div>
     </div>
-    
-    <!-- Welcome Modal -->
-    <div id="welcome-modal" class="welcome-overlay hidden">
-        <div class="welcome-box">
-            <h2>Tulu-Tigalari Keyboard</h2>
-            <p>This keyboard lets you type Tulu using a simple Latin-phonetic system.</p>
+
+    <dialog id="welcome-modal" class="welcome-box" aria-labelledby="welcome-title">
+        <form method="dialog">
+            <h2 id="welcome-title">Tulu-Tigalari Keyboard</h2>
+            <p>Type Tulu with a simple Latin-phonetic system and see it in Tulu script as you type.</p>
             <ul>
-                <li>Type using Latin letters → Tulu script appears automatically</li>
-                <li>Swipe across keys to form combined sounds</li>
-                <li>Tap suggestions to auto-complete words</li>
+                <li><strong>Long Press:</strong> hold a key such as n, t or s, slide to a variant and release.</li>
+                <li><strong>Shift Layer:</strong> tap &#8679; for the diacritic letters, or slide across letters to combine sounds.</li>
+                <li>Tap a suggestion to complete the word.</li>
+                <li>A physical keyboard works too.</li>
             </ul>
-            <button id="welcome-start">Start Typing</button>
-        </div>
-    </div>
-    
-    <script type="module" src="keyboardLoader.js"></script>
-    <script type="module">
-        import { initWelcomeModal } from "./welcome.js";
-        initWelcomeModal();
-    </script>
+            <button id="welcome-start" autofocus>Start typing</button>
+        </form>
+    </dialog>
+
+    <div id="sr-status" class="sr-only" role="status" aria-live="polite"></div>
+
+    <noscript>This keyboard needs JavaScript.</noscript>
+    <script type="module" src="main.js"></script>
 </body>
 </html>
