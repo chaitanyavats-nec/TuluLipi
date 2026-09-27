@@ -1,0 +1,11 @@
+{
+  "name": "tulu-lipi-keyboard",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Transliteration keyboard for Tulu-Tigalari script",
+  "scripts": {
+    "test": "node --test",
+    "start": "npx --yes http-server . -p 8080 -c-1"
+  }
+}

@@ -73,9 +73,9 @@ export const TULU_LEXICON = [
     frequency: null
   },
 
-  // === aandϵ ===
+  // === aandɛ ===
   {
-    variant: "aandϵ",
+    variant: "aandɛ",
     lemma: "aandɛ",
     dialect: "brahmin",
     region: "general",
@@ -83,9 +83,9 @@ export const TULU_LEXICON = [
     frequency: null
   },
 
-  // Brahmin dialect (-antϵ)
+  // Brahmin dialect (-antɛ)
   {
-    variant: "antϵ",
+    variant: "antɛ",
     lemma: "aandɛ",
     dialect: "brahmin",
     region: "general",
@@ -93,9 +93,9 @@ export const TULU_LEXICON = [
     frequency: null
   },
 
-  // North common harijan tribal jain dialect (-andϵ)
+  // North common harijan tribal jain dialect (-andɛ)
   {
-    variant: "andϵ",
+    variant: "andɛ",
     lemma: "aandɛ",
     dialect: "harijan-tribal-jain",
     region: "north",
@@ -103,9 +103,9 @@ export const TULU_LEXICON = [
     frequency: null
   },
 
-  // South common harijan tribal jain dialects (-andϵ -antϵ -aantϵ)
+  // South common harijan tribal jain dialects (-andɛ -antɛ -aantɛ)
   {
-    variant: "andϵ",
+    variant: "andɛ",
     lemma: "aandɛ",
     dialect: "harijan-tribal-jain",
     region: "south",
@@ -113,7 +113,7 @@ export const TULU_LEXICON = [
     frequency: null
   },
   {
-    variant: "antϵ",
+    variant: "antɛ",
     lemma: "aandɛ",
     dialect: "harijan-tribal-jain",
     region: "south",
@@ -121,7 +121,7 @@ export const TULU_LEXICON = [
     frequency: null
   },
   {
-    variant: "aantϵ",
+    variant: "aantɛ",
     lemma: "aandɛ",
     dialect: "harijan-tribal-jain",
     region: "south",
@@ -131,7 +131,7 @@ export const TULU_LEXICON = [
 
   // S̈rii Bhagavato (Ed. Puninchattaya)
   {
-    variant: "antϵ",
+    variant: "antɛ",
     lemma: "aandɛ",
     dialect: "classical-bhagavato",
     region: "literary",
@@ -163,9 +163,9 @@ export const TULU_LEXICON = [
     frequency: null
   },
 
-  // === eerϵ ===
+  // === eerɛ ===
   {
-    variant: "eerϵ",
+    variant: "eerɛ",
     lemma: "eerɛ",
     dialect: "general",
     region: "general",
@@ -207,9 +207,9 @@ export const TULU_LEXICON = [
     frequency: null
   },
 
-  // === aasϵ ===
+  // === aasɛ ===
   {
-    variant: "aasϵ",
+    variant: "aasɛ",
     lemma: "aasɛ",
     dialect: "general",
     region: "general",
@@ -219,7 +219,7 @@ export const TULU_LEXICON = [
 
   // Rare occurrences
   {
-    variant: "aacϵ",
+    variant: "aacɛ",
     lemma: "aasɛ",
     dialect: "rare",
     region: "general",
@@ -227,7 +227,7 @@ export const TULU_LEXICON = [
     frequency: null
   },
   {
-    variant: "aaśϵ",
+    variant: "aaśɛ",
     lemma: "aasɛ",
     dialect: "rare",
     region: "general",
@@ -235,9 +235,9 @@ export const TULU_LEXICON = [
     frequency: null
   },
 
-  // South brahmin dialect aaśϵ
+  // South brahmin dialect aaśɛ
   {
-    variant: "aaśϵ",
+    variant: "aaśɛ",
     lemma: "aasɛ",
     dialect: "brahmin",
     region: "south",
@@ -245,9 +245,9 @@ export const TULU_LEXICON = [
     frequency: null
   },
 
-  // South harijan tribal dialects aacϵ
+  // South harijan tribal dialects aacɛ
   {
-    variant: "aacϵ",
+    variant: "aacɛ",
     lemma: "aasɛ",
     dialect: "harijan-tribal",
     region: "south",
